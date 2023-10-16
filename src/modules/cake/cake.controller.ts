@@ -1,6 +1,5 @@
 import { Body, Controller, Get, Logger, Param, Post, Query } from '@nestjs/common';
 import { CakeService } from './cake.service';
-import { Cake } from './cake.schema';
 import { CreateCakeDto } from './dto/CreateCakeDto';
 
 @Controller('cake')
@@ -15,9 +14,8 @@ export class CakeController{
 
     @Post('create/:type')
     async createCake(@Param('type') type: string, @Body() data: CreateCakeDto){
-        var cake = this.cakeService.createCake(type, data.name, data.description, 
+        var cake = this.cakeService.createCake(type, data.name, data.ingredients, data.description, 
             data.flavor, data.filling, data.stock, data.price, data.image);
-
              return await cake;
     }
 }

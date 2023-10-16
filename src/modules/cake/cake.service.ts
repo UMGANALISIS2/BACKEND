@@ -2,12 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Cake } from './cake.schema';
-import { BakedCakeFactory } from './factory/BakedCake';
-import { CakeFactory } from './cake.interface';
-import { ColdCakeFactory } from './factory/ColdCake';
-import { YogurtCakeFactory } from './factory/YogurtCake';
 import { Subject } from 'rxjs';
 import { Cron } from '@nestjs/schedule';
+import { CakeFactory } from './factory/CakeFactory';
 
 @Injectable()
 export class CakeService{
@@ -16,12 +13,14 @@ export class CakeService{
     private catalogSubject = new Subject<Cake[]>();
 
     constructor(@InjectModel('Cake') private readonly cakeModel: Model<Cake>,
-    private readonly bakedCakeFactory: BakedCakeFactory,
-    private readonly coldCakeFactory: ColdCakeFactory,
-    private readonly yogurtCakeFactory: YogurtCakeFactory){
+    private readonly cakeFactory: CakeFactory){
         this.initialCatalog()
         .then((c) => {
             this.catalog = c;
+        })
+        .catch((e) => {
+            Logger.error("Error al obtener el catálogo inicial.", "Catalogo");
+            this.catalog = [];
         })
     }
 
@@ -49,27 +48,14 @@ export class CakeService{
         })
     }
 
-    async createCake(type: string, name: string, description: string, flavor: string, 
+    async createCake(type: string, name: string, ingredients: string[], description: string, flavor: string, 
         filling: string, stock: number, price:number, image: string): Promise<Cake> {
-        let factory: CakeFactory;
-
-        switch (type) {
-            case 'baked':
-                factory = this.bakedCakeFactory;
-            break;
-            case 'cold':
-                factory = this.coldCakeFactory;
-            break;
-            case 'yogurt':
-                factory = this.yogurtCakeFactory;
-            break;
-        }
-
-        var cake = factory.createCake(name, description, flavor, filling, stock, price, image);
-        var creation = new this.cakeModel(cake);
-        await creation.save()
-        this.addToCatalog(creation);
-        return creation;
+            const factory = this.cakeFactory.getFactory(type);
+            var cake = factory.createCake(name, description, ingredients, flavor, filling, stock, price, image);
+            var creation = new this.cakeModel(cake);
+            await creation.save()
+            this.addToCatalog(creation);
+            return creation;
       }
 
       @Cron("1 0 0 0 0 0", {name: 'discount'})

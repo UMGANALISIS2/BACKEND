@@ -18,6 +18,9 @@ export class Cake {
   flavor: string;
 
   @Prop()
+  ingredients: string[];
+
+  @Prop()
   filling: string;
 
   @Prop()

@@ -1,4 +1,4 @@
-import { IsDecimal, IsNotEmpty, IsNumber, IsUrl } from "class-validator";
+import { IsArray, IsDecimal, IsNotEmpty, IsNumber, IsUrl } from "class-validator";
 
 export class CreateCakeDto{
     @IsNotEmpty()
@@ -12,6 +12,9 @@ export class CreateCakeDto{
 
     @IsNotEmpty()
     flavor: string;
+
+    @IsArray()
+    ingredients: string[];
 
     filling: string;
 

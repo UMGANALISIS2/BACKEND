@@ -1,10 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { CakeFactory } from "../cake.interface";
+import { ICakeFactory } from "../cake.interface";
 import { Cake } from "../cake.schema";
 
 @Injectable()
-export class YogurtCakeFactory implements CakeFactory{
-    createCake(name: string, description: string, flavor: string, filling: string, stock: number, price: number, image: string): Cake {
+export class YogurtCakeFactory implements ICakeFactory{
+    createCake(name: string, description: string, ingredients: string[], flavor: string, filling: string, stock: number, price: number, image: string): Cake {
         Logger.log("Creating from yogurt", "Yogurt cake")
         var cake = new Cake();
         cake.name = name;
@@ -12,6 +12,7 @@ export class YogurtCakeFactory implements CakeFactory{
         cake.family = 'yogurt';
         cake.flavor = flavor;
         cake.filling = filling;
+        cake.ingredients = ingredients;
         cake.stock = stock;
         cake.price = price;
         cake.image = image;
