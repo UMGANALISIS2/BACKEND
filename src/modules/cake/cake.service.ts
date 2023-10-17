@@ -5,6 +5,8 @@ import { Cake } from './cake.schema';
 import { Subject } from 'rxjs';
 import { Cron } from '@nestjs/schedule';
 import { CakeFactory } from './factory/CakeFactory';
+import { CakeQueryDto } from './dto/CakeQuery.dto';
+import { QueryDto } from './dto/QueryDto';
 
 @Injectable()
 export class CakeService{
@@ -58,8 +60,48 @@ export class CakeService{
             return creation;
       }
 
+      public async filterCakes(query: CakeQueryDto){
+        var mongoQ = this.buildMongoQuery(query);
+        console.log(mongoQ)
+        var results: Cake[] = await this.cakeModel.find(mongoQ)
+
+        return results;
+      }
+
       @Cron("1 0 0 0 0 0", {name: 'discount'})
       public reduceStock(){
         Logger.log("ola")
+      }
+
+      private buildMongoQuery(query: CakeQueryDto){
+        const mongoQuery = {};
+        for(const sentence of query.sentences){
+            const field = sentence.field;
+            const operator = sentence.operator;
+            const values = sentence.value;
+
+            if (operator === 'equals') {
+                mongoQuery[field] = { $eq: values.toString() };
+              } else if (operator === 'distinct') {
+                mongoQuery[field] = { $ne: values[0] };
+              } else if (operator === 'major') {
+                mongoQuery[field] = { $gt: values[0] };
+              } else if (operator === 'minus') {
+                mongoQuery[field] = { $lt: values[0] };
+              } else if (operator === 'or') {
+                if (!mongoQuery[field]) {
+                  mongoQuery[field] = { $in: values };
+                } else {
+                  mongoQuery[field].$in = values;
+                }
+              } else if (operator === 'not') {
+                if (!mongoQuery[field]) {
+                  mongoQuery[field] = { $nin: values };
+                } else {
+                  mongoQuery[field].$nin = values;
+                }
+              }
+        }    
+        return mongoQuery;
       }
 }

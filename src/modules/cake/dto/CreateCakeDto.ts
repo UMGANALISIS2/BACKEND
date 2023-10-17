@@ -8,9 +8,6 @@ export class CreateCakeDto{
     description: string;
 
     @IsNotEmpty()
-    family: string;
-
-    @IsNotEmpty()
     flavor: string;
 
     @IsArray()

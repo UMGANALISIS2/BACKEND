@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Logger, Param, Post, Query } from '@nestjs/common';
 import { CakeService } from './cake.service';
 import { CreateCakeDto } from './dto/CreateCakeDto';
+import { CakeQueryDto } from './dto/CakeQuery.dto';
 
 @Controller('cake')
 export class CakeController{
@@ -10,6 +11,11 @@ export class CakeController{
     @Get('catalog')
     async getCatalog(){
         return this.cakeService.getCakes()
+    }
+    
+    @Post('filter')
+    async filterCakes(@Body('query') query: CakeQueryDto){
+        return this.cakeService.filterCakes(query);
     }
 
     @Post('create/:type')
