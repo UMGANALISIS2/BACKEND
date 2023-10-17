@@ -1,12 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { Cake } from './cake.schema';
 import { Subject } from 'rxjs';
 import { Cron } from '@nestjs/schedule';
 import { CakeFactory } from './factory/CakeFactory';
 import { CakeQueryDto } from './dto/CakeQuery.dto';
-import { QueryDto } from './dto/QueryDto';
+import { SentenceDto } from './dto/SentenceDto';
+import { SearchInterpreter } from './interpreter/SearchInterpreter';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class CakeService{
@@ -14,14 +15,16 @@ export class CakeService{
     private catalog: Cake[] = [];
     private catalogSubject = new Subject<Cake[]>();
 
-    constructor(@InjectModel('Cake') private readonly cakeModel: Model<Cake>,
-    private readonly cakeFactory: CakeFactory){
+    constructor(@InjectRepository(Cake)
+    private cakeRepository: Repository<Cake>,
+    private readonly cakeFactory: CakeFactory,
+    private readonly searchInterpreter: SearchInterpreter){
         this.initialCatalog()
         .then((c) => {
             this.catalog = c;
         })
         .catch((e) => {
-            Logger.error("Error al obtener el catálogo inicial.", "Catalogo");
+            Logger.error("Error al obtener el catálogo inicial. " + e, "Catalogo");
             this.catalog = [];
         })
     }
@@ -31,7 +34,12 @@ export class CakeService{
     }
 
     private async initialCatalog(): Promise<Cake[]>{
-        return await this.cakeModel.find({});
+        const data = await this.cakeRepository
+        .createQueryBuilder("Cake")
+        .leftJoinAndSelect("Cake.family", "Family")
+        .getMany();
+
+        return await data;
     }
 
     public getCakes(): Cake[]{
@@ -46,7 +54,7 @@ export class CakeService{
 
     async findCakes(): Promise<Cake[]> {
 
-        return this.cakeModel.find({
+        return this.cakeRepository.find({
         })
     }
 
@@ -54,16 +62,14 @@ export class CakeService{
         filling: string, stock: number, price:number, image: string): Promise<Cake> {
             const factory = this.cakeFactory.getFactory(type);
             var cake = factory.createCake(name, description, ingredients, flavor, filling, stock, price, image);
-            var creation = new this.cakeModel(cake);
-            await creation.save()
+            var creation = new Cake()
+            await this.cakeRepository.save(creation);
             this.addToCatalog(creation);
             return creation;
       }
 
       public async filterCakes(query: CakeQueryDto){
-        var mongoQ = this.buildMongoQuery(query);
-        console.log(mongoQ)
-        var results: Cake[] = await this.cakeModel.find(mongoQ)
+        var results: Cake[] = await this.cakeRepository.find();
 
         return results;
       }
@@ -73,35 +79,10 @@ export class CakeService{
         Logger.log("ola")
       }
 
-      private buildMongoQuery(query: CakeQueryDto){
-        const mongoQuery = {};
-        for(const sentence of query.sentences){
-            const field = sentence.field;
-            const operator = sentence.operator;
-            const values = sentence.value;
-
-            if (operator === 'equals') {
-                mongoQuery[field] = { $eq: values.toString() };
-              } else if (operator === 'distinct') {
-                mongoQuery[field] = { $ne: values[0] };
-              } else if (operator === 'major') {
-                mongoQuery[field] = { $gt: values[0] };
-              } else if (operator === 'minus') {
-                mongoQuery[field] = { $lt: values[0] };
-              } else if (operator === 'or') {
-                if (!mongoQuery[field]) {
-                  mongoQuery[field] = { $in: values };
-                } else {
-                  mongoQuery[field].$in = values;
-                }
-              } else if (operator === 'not') {
-                if (!mongoQuery[field]) {
-                  mongoQuery[field] = { $nin: values };
-                } else {
-                  mongoQuery[field].$nin = values;
-                }
-              }
-        }    
-        return mongoQuery;
+      private buildMongoQuery(sentences: SentenceDto[]){
+        for(var sent in sentences){
+          console.log(sent);
+        }
+        return {};
       }
 }

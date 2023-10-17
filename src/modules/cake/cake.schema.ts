@@ -1,37 +1,42 @@
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import  { HydratedDocument } from 'mongoose';
+import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from "typeorm";
+import { Family } from "../family/family.schema";
 
-export type CakeDocument = HydratedDocument<Cake>;
+@Entity()
+export class Cake{
+  @PrimaryGeneratedColumn()
+  id: number;
 
-@Schema()
-export class Cake {
-  @Prop()
+  @Column()
   name: string;
 
-  @Prop()
+  @Column()
   description: string;
 
-  @Prop()
-  family: string;
+  @OneToOne(type => Family)
+  @JoinColumn({
+    name: 'family'
+  })
+  family: Family;
+  
 
-  @Prop()
+  @Column()
   flavor: string;
 
-  @Prop()
-  ingredients: string[];
-
-  @Prop()
+  @Column()
   filling: string;
 
-  @Prop()
+  @Column({
+    type: 'decimal',
+    precision: 2
+  })
   price: number;
 
-  @Prop()
+  @Column({
+    type: 'int'
+  })
   stock: number;
 
-  @Prop()
+  @Column()
   image: string;
-  
-}
 
-export const CakeSchema = SchemaFactory.createForClass(Cake);
+}
